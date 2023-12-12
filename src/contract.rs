@@ -29,15 +29,15 @@ impl Into<CwOrder> for Order {
 
 #[cw_serde]
 pub enum Bound {
-    Inclusive(Addr),
-    Exclusive(Addr),
+    Inclusive(String),
+    Exclusive(String),
 }
 
 impl Into<CwBound<'_, Addr>> for Bound {
     fn into(self) -> CwBound<'static, Addr> {
         match self {
-            Bound::Inclusive(addr) => CwBound::inclusive(addr),
-            Bound::Exclusive(addr) => CwBound::exclusive(addr),
+            Bound::Inclusive(addr) => CwBound::inclusive(Addr::unchecked(addr)),
+            Bound::Exclusive(addr) => CwBound::exclusive(Addr::unchecked(addr)),
         }
     }
 }
@@ -54,12 +54,9 @@ impl AddressListContract {
     }
 
     #[msg(instantiate)]
-    pub fn instantiate(&self, ctx: InstantiateCtx, admin: Option<String>) -> StdResult<Response> {
-        let opt = match admin {
-            Some(admin) => Some(ctx.deps.api.addr_validate(admin.as_str())?),
-            None => None,
-        };
-        self.admin.save(ctx.deps.storage, &opt)?;
+    pub fn instantiate(&self, ctx: InstantiateCtx, admin: String) -> StdResult<Response> {
+        let admin = ctx.deps.api.addr_validate(admin.as_str())?;
+        self.admin.save(ctx.deps.storage, &Some(admin))?;
         Ok(Response::default())
     }
 
